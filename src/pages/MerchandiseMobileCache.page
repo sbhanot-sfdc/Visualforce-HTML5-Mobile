@@ -1,0 +1,18 @@
+<apex:page showHeader="false" standardStylesheets="false" contentType="text/cache-manifest" cache="false">CACHE MANIFEST
+
+NETWORK:
+*
+
+CACHE:
+#css
+{!URLFOR($Resource.jQueryMobile101, 'jquery.mobile-1.0.1/jquery.mobile-1.0.1.min.css')}
+{!URLFOR($Resource.jQueryiOSTheme, 'ios_inspired/styles.css')}
+{!URLFOR($Resource.SwipeRightCSS)}
+
+#js
+{!URLFOR($Resource.jQueryMobile101, 'jquery.mobile-1.0.1/demos/jquery.js')}
+{!URLFOR($Resource.jQueryMobile101, 'jquery.mobile-1.0.1/jquery.mobile-1.0.1.min.js')}
+{!URLFOR($Resource.ForceTK)}
+
+
+</apex:page>

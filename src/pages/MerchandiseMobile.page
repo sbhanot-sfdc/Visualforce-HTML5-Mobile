@@ -1,0 +1,233 @@
+<apex:page docType="html-5.0" sidebar="false" 
+           showHeader="false" standardStylesheets="false" 
+           cache="false" controller="MerchandiseMobileController" >
+
+<html manifest="/apex/MerchandiseMobileCache">
+
+<head>
+<title>Merchandise Mobile</title>
+
+<apex:stylesheet value="{!URLFOR($Resource.jQueryMobile101, 'jquery.mobile-1.0.1/jquery.mobile-1.0.1.min.css')}" />
+<apex:includeScript value="{!URLFOR($Resource.jQueryMobile101, 'jquery.mobile-1.0.1/demos/jquery.js')}"/>
+<apex:includeScript value="{!URLFOR($Resource.jQueryMobile101, 'jquery.mobile-1.0.1/jquery.mobile-1.0.1.min.js')}"/>
+
+<apex:stylesheet value="{!URLFOR($Resource.SwipeRightCSS)}" />
+<apex:includeScript value="{!URLFOR($Resource.PhoneGap)}"/>
+
+<!-- This is the JavaScript toolkit that enables REST API calls from a VF page
+We'll use this toolkit to implement the 'swipe-right-to-delete' functionality -->
+<apex:includeScript value="{!URLFOR($Resource.ForceTK)}"/>
+
+<!-- Uncomment this line if you're using Weire to debug the page.
+<script src="http://<insert IP address of your localhost here>:8080/target/target-script-min.js"></script>
+-->
+
+<script type="text/javascript">
+    var merchansideRecs = new Array();
+    
+    var $j = jQuery.noConflict(); 
+
+    var restAPIClient = new forcetk.Client();
+    restAPIClient.setSessionToken('{!$Api.Session_ID}');   
+
+    $j(document).bind('pageinit',function(e){
+        //Clear out any leaftover Delete buttons
+        $j('.aDeleteBtn').remove();
+    });              
+        
+    $j(document).ready(function() {
+        //Check online status
+        if (!navigator.onLine) {
+             $j('#merchandiseList').empty();
+             $j('#merchList').append('<h2>Oops. Looks like you forgot pay your Internet bill.</h2>');
+             return;
+        }        
+
+        //If the page goes offline
+        $j(window).bind('offline',function(e){
+            $j.mobile.changePage('#listpage', {changeHash: true});
+            $j('#merchandiseList').empty();
+            $j('#merchList').append('<h2>Oops. Looks like you forgot pay your Internet bill.</h2>');
+        })       
+                           
+        $j.mobile.showPageLoadingMsg();
+        getMerchandise(function(){
+                    $j.mobile.hidePageLoadingMsg();
+                });
+
+        //Responding to Orientation change
+        $j(window).bind( 'orientationchange', function(e){                             
+             changeOrientation(e.orientation);
+        });
+    });
+    
+    function getMerchandise(callback) {
+        $j('#merchandiseList').empty();
+        //Invoke JS Remoting function to retrieve Merchandising Records 
+        MerchandiseMobileController.getMerchandiseRecs(function(records, e) { 
+                                                        showMerchandise(records, callback) }, 
+                                                        {escape:true}); 
+    }
+    
+    function showMerchandise(records, callback) {
+        merchansideRecs.length = 0;
+        
+        //Iterate through Merchandising records and add each rec. to the page DOM
+        for(var i = 0; i < records.length; i++) { merchansideRecs[records[i].Id] = records[i]; }
+        var x = 0;
+        $j.each(records,
+            function() {
+            var newLi = $j('<li></li>');
+                        
+            var newLink = $j('<a id="' +this.Id+ '" data-transition="flip"><h2>' +this.Name+ '</h2></a>');
+            newLink.click(function(e) {
+                e.preventDefault();
+                $j.mobile.showPageLoadingMsg();
+                $j('#merchandiseName').html(merchansideRecs[this.id].Name);
+                $j('#description').html(merchansideRecs[this.id].Description__c);
+                $j('#inventory').html(merchansideRecs[this.id].Total_Inventory__c);
+                $j('#price').html('$'+merchansideRecs[this.id].Price__c);
+                $j('#merchandiseId').val(merchansideRecs[this.id].Id);
+                $j.mobile.hidePageLoadingMsg();
+                
+                $j.mobile.changePage('#detailpage', {changeHash: true});
+            });
+            newLi.append(newLink);            
+            newLi.clone(true, true).appendTo('#merchandiseListDetail');
+            newLi.appendTo('#merchandiseList');
+            x++;
+          });
+        
+        $j('#merchandiseList').listview('refresh');
+        enableSwipeRight();
+        if(callback != null) { callback(); }
+    }     
+
+    //Apply iOS native skin, if applicable
+    if (navigator.userAgent.indexOf('iPhone') != -1) {
+         document.write('<link rel="stylesheet" href="{!URLFOR($Resource.jQueryiOSTheme, 
+                                                      'ios_inspired/styles.css')}" type="text/css" />');
+    }      
+
+
+    if(window.applicationCache) { //if we're online, check to see if the cache is updated
+        if (window.applicationCache.status > 3) { //UPDATEREADY OR OBSOLETE.  KEEPS REMOTE CSRF SANITY.
+            window.applicationCache.update();
+            window.applicationCache.swapCache();
+        }
+    }
+
+
+    function changeOrientation(ori) {
+        if (ori == 'landscape') {
+            $j('#leftPanel').css('display','').css('width','210px').css('float','left');
+            $j('#rightPanel').css('margin-left','220px');
+        }
+        else{
+            $j('#leftPanel').css('display','none');
+            $j('#rightPanel').css('margin-left','');
+        }
+    }
+    
+    function enableSwipeRight(){
+        // remove any existing swipe areas
+        $j('.aDeleteBtn').remove();
+        // add swipe event to the list item
+        $j('ul li').bind('swiperight', function(e){
+            // reference the just swiped list item
+            var $li = $j(this);
+            // remove all buttons first
+            $j('.aDeleteBtn').remove();
+            // create buttons and div container
+            var $deleteBtn = $j('<a>Delete</a>').attr({
+                    'class': 'aDeleteBtn ui-btn-up-r',
+                    'href': '#'
+                });
+            // insert swipe div into list item
+            $deleteBtn.click(function(e) {
+                e.preventDefault();
+                var a = $j(this);
+                var index = a.parent().index();
+                var recId = $j('.ui-link-inherit').eq(index).attr('id');
+                
+                //Use the ForceTK toolkit to invoke the REST API
+                restAPIClient.del('Merchandise__c',recId, function(response){
+                                                              $j.mobile.showPageLoadingMsg();
+                                                              getMerchandise(function(){
+                                                                  $j.mobile.hidePageLoadingMsg();
+                                                              });
+                                                          }, 
+                                                          function(jqXHR, textStatus, errorThrown){
+                                                              alert('Failed '+errorThrown);
+                                                           });
+            });
+
+            $li.prepend($deleteBtn);
+        });
+   }
+        
+    //Using PhoneGap JS functions to access device features like the Camera                    
+    function takePic() {    
+        navigator.camera.getPicture(onPicSuccess, onPicFail, { quality: 50}); 
+    }
+                
+    function onPicSuccess(imageData) {
+        var recId =  $j('#merchandiseId');
+        MerchandiseMobileController.saveMerchandiseImage(imageData, recId, 
+            function(res,event){        
+                $j('#merchPic').src = "data:image/jpeg;base64," + imageData;
+            });
+    }
+
+    function onPicFail(message) {
+        console.log("Pic failed: " + JSON.stringify(message));
+    }
+</script>
+
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+</head>
+
+<body>
+    
+    <div data-role="page" data-theme="b" id="listpage">
+            
+        <div data-role="header" data-position="fixed">
+            <a href='#' id="home" class='ui-btn-left' data-icon='home' >Home</a>
+            <h1>Merchandise</h1>
+        </div>
+        <div data-role="content" id="merchList">            
+            <ul id="merchandiseList" data-filter="true" data-inset="true" data-role="listview" 
+                data-theme="c" data-dividertheme="b">
+            </ul>
+        </div>
+    </div>
+    
+    <div data-role="page" data-theme="b" id="detailpage">
+        <div data-role="header" data-position="fixed">
+            <a href='#listpage' id="back2Merchandise" class='ui-btn-left' data-icon='arrow-l' data-direction="reverse" data-transition="flip">Back</a>
+            <h1>Merchandise Details</h1>
+        </div>
+        <div data-role="content">
+            <div id="leftPanel" style="display:none" >
+                <ul id="merchandiseListDetail" data-inset="true" data-role="listview" 
+                    data-theme="c" data-dividertheme="b">
+                </ul>    
+            </div>
+            <div id="rightPanel">
+                <h1 id="merchandiseName"></h1>
+                <table>
+                    <tr><td><b>Description:</b></td><td id="description"></td></tr>
+                    <tr><td><b>Price:</b></td><td id="price"></td></tr>
+                    <tr><td><b>Available Inventory:</b></td><td id="inventory"></td></tr>
+                </table>
+                <input type="hidden" id="merchandiseId" />
+                <a onClick="takePic();" href="#" data-theme="a" data-iconpos="top" id="picBtn" data-role="button" data-icon="star">Take Picture</a>
+            </div>    
+        </div>
+    </div>
+    
+</body>
+</html>
+
+</apex:page>
