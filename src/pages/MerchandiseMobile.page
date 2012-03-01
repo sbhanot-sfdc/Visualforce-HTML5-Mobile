@@ -172,7 +172,7 @@ We'll use this toolkit to implement the 'swipe-right-to-delete' functionality --
     }
                 
     function onPicSuccess(imageData) {
-        var recId =  $j('#merchandiseId');
+        var recId =  $j('#merchandiseId').val();
         MerchandiseMobileController.saveMerchandiseImage(imageData, recId, 
             function(res,event){        
                 $j('#merchPic').src = "data:image/jpeg;base64," + imageData;
