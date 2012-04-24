@@ -172,11 +172,7 @@ We'll use this toolkit to implement the 'swipe-right-to-delete' functionality --
     function takePic() {    
         navigator.camera.getPicture(onPicSuccess, onPicFail, { quality: 50}); 
     }
-    
-    function scanBarCode() {
-        window.plugins.barcodeScanner.scan(onBarcodeScanSuccess,  onBarcodeScanFailure);
-    }
-                
+            
     function onPicSuccess(imageData) {
         var recId =  $j('#merchandiseId').val();
         MerchandiseMobileController.saveMerchandiseImage(imageData, recId, 
@@ -203,11 +199,9 @@ We'll use this toolkit to implement the 'swipe-right-to-delete' functionality --
     }
     
     function onBarcodeScanSuccess(result) {
-        alert(result.text);
         MerchandiseMobileController.getMerchandiseRecByBarCode(result.text, 
                                                             function(res,event){
                                                                 if (res != null){
-                                                                    alert(JSON.stringify(res));
                                                                     $j.mobile.showPageLoadingMsg();
                                                                     $j('#merchandiseName').html(res.Name);
                                                                     $j('#description').html(res.Description__c);
