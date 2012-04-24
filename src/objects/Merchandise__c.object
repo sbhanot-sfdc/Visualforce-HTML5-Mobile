@@ -56,6 +56,16 @@
         <visibleLines>25</visibleLines>
     </fields>
     <fields>
+        <fullName>Bar_Code__c</fullName>
+        <externalId>false</externalId>
+        <label>Bar Code</label>
+        <length>50</length>
+        <required>false</required>
+        <trackFeedHistory>false</trackFeedHistory>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
         <fullName>Description__c</fullName>
         <externalId>false</externalId>
         <label>Description</label>
@@ -124,6 +134,7 @@
         <columns>Description__c</columns>
         <columns>Price__c</columns>
         <columns>Total_Inventory__c</columns>
+        <columns>OWNER.ALIAS</columns>
         <filterScope>Everything</filterScope>
         <label>All</label>
     </listViews>

@@ -13,6 +13,6 @@ CACHE:
 {!URLFOR($Resource.jQueryMobile101, 'jquery.mobile-1.0.1/demos/jquery.js')}
 {!URLFOR($Resource.jQueryMobile101, 'jquery.mobile-1.0.1/jquery.mobile-1.0.1.min.js')}
 {!URLFOR($Resource.ForceTK)}
-
+{!URLFOR($Resource.BarCodeScanner)}
 
 </apex:page>

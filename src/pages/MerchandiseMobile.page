@@ -14,6 +14,8 @@
 <apex:stylesheet value="{!URLFOR($Resource.SwipeRightCSS)}" />
 <apex:includeScript value="{!URLFOR($Resource.PhoneGap)}"/>
 
+<apex:includeScript value="{!URLFOR($Resource.BarCodeScanner)}"/>
+
 <!-- This is the JavaScript toolkit that enables REST API calls from a VF page
 We'll use this toolkit to implement the 'swipe-right-to-delete' functionality -->
 <apex:includeScript value="{!URLFOR($Resource.ForceTK)}"/>
@@ -170,6 +172,10 @@ We'll use this toolkit to implement the 'swipe-right-to-delete' functionality --
     function takePic() {    
         navigator.camera.getPicture(onPicSuccess, onPicFail, { quality: 50}); 
     }
+    
+    function scanBarCode() {
+        window.plugins.barcodeScanner.scan(onBarcodeScanSuccess,  onBarcodeScanFailure);
+    }
                 
     function onPicSuccess(imageData) {
         var recId =  $j('#merchandiseId').val();
@@ -181,6 +187,45 @@ We'll use this toolkit to implement the 'swipe-right-to-delete' functionality --
 
     function onPicFail(message) {
         console.log("Pic failed: " + JSON.stringify(message));
+    }
+                    
+    function onPicSuccess(imageData) {
+        InspectionsController.saveInspectionImage(imageData, inspectionRec, 
+            function(res,event){ });
+    }
+
+    function onPicFail(message) {
+        console.log("Pic failed: " + JSON.stringify(message));
+    }
+    
+    function scanBarCode() {
+        window.plugins.barcodeScanner.scan(onBarcodeScanSuccess,  onBarcodeScanFailure);
+    }
+    
+    function onBarcodeScanSuccess(result) {
+        alert(result.text);
+        MerchandiseMobileController.getMerchandiseRecByBarCode(result.text, 
+                                                            function(res,event){
+                                                                if (res != null){
+                                                                    alert(JSON.stringify(res));
+                                                                    $j.mobile.showPageLoadingMsg();
+                                                                    $j('#merchandiseName').html(res.Name);
+                                                                    $j('#description').html(res.Description__c);
+                                                                    $j('#inventory').html(res.Total_Inventory__c);
+                                                                    $j('#price').html('$'+res.Price__c);
+                                                                    $j('#merchandiseId').val(res.Id);
+                                                                    $j.mobile.hidePageLoadingMsg();
+                                                                    
+                                                                    $j.mobile.changePage('#detailpage', {changeHash: true});
+                                                                }
+                                                                else{
+                                                                    alert('Sorry. No matching Merchandise records found.');
+                                                                }    
+                                                            });
+    }
+    
+    function onBarcodeScanFailure(error) {
+        console.log("Barcode scanning failed: " + error);
     }
 </script>
 
@@ -195,6 +240,7 @@ We'll use this toolkit to implement the 'swipe-right-to-delete' functionality --
         <div data-role="header" data-position="fixed">
             <a href='#' id="home" class='ui-btn-left' data-icon='home' >Home</a>
             <h1>Merchandise</h1>
+            <a href="#" onClick="scanBarCode();" data-icon="grid" class="ui-btn-right" >Search</a>
         </div>
         <div data-role="content" id="merchList">            
             <ul id="merchandiseList" data-filter="true" data-inset="true" data-role="listview" 
